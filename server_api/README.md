@@ -148,7 +148,6 @@ Returns customers who have placed more than one order.
           "total_spent": "1371.00"
         }
       ],
-      "message": "Frequent buyers retrieved successfully."
     }
     ```
 
