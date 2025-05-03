@@ -1,6 +1,6 @@
-# E-Commerce API Documentation
+# API Documentation
 
-This API provides access to reports and analysis for e-commerce data stored in an AWS RDS MySQL database.
+This API provides access to reports and analysis for data stored in an AWS RDS MySQL database.
 
 ## Base URL
 
