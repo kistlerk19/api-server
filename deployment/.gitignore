@@ -1,0 +1,19 @@
+# Sensitive files
+.vault_password
+*.pem
+.env
+
+# Local inventory can contain paths specific to your environment
+inventory.local.ini
+
+# Ansible specific files
+*.retry
+
+# OS specific files
+.DS_Store
+Thumbs.db
+
+# IDE specific files
+.idea/
+.vscode/
+*.sublime-*

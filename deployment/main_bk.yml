@@ -6,10 +6,8 @@
 - name: Deploy Laravel application to EC2 with RDS connection
   hosts: ec2_instances
   become: true
-  vars_files:
-    - vault.yml  # Include the vault file containing encrypted variables
   vars:
-    app_name: api-server
+    app_name: laravel-app
     app_root: /var/www/{{ app_name }}
     webserver_user: www-data
     webserver_group: www-data
@@ -19,16 +17,16 @@
     git_repo: https://github.com/kistlerk19/api-server.git
     git_branch: main
     git_subdirectory: server_api  # The subdirectory we want to use
-    # RDS Connection details - Using vault variables
-    db_host: "{{ vault_rds_endpoint }}"  # Use your RDS endpoint from vault
-    db_name: "{{ vault_db_name }}"
-    db_user: "{{ vault_db_user }}"
-    db_password: "{{ vault_db_password }}"
+    # RDS Connection details - Set these in your inventory or pass as extra vars
+    db_host: "{{ rds_endpoint }}"  # Use your RDS endpoint
+    db_name: "{{ db_name }}"
+    db_user: "{{ db_user }}"
+    db_password: "{{ db_password }}"
     # Laravel environment settings
     app_env: production
     app_debug: false
     app_url: "http://{{ ansible_host }}"
-    app_key: "{{ vault_app_key | default('') }}"
+    app_key: "{{ lookup('env', 'LARAVEL_APP_KEY', default='') }}"
     # Temporary directory for cloning the full repo
     temp_repo_dir: /tmp/api-server-repo
 
@@ -36,8 +34,6 @@
     - name: Update apt cache
       apt:
         update_cache: yes
-      tags:
-        - deploy
 
     - name: Install system dependencies
       apt:
@@ -49,15 +45,11 @@
           - software-properties-common
           - gnupg
         state: present
-      tags:
-        - deploy
 
     - name: Add PHP repository
       apt_repository:
         repo: ppa:ondrej/php
         state: present
-      tags:
-        - deploy
 
     - name: Install PHP and required extensions
       apt:
@@ -74,29 +66,13 @@
           - "php{{ php_version }}-zip"
           - "php{{ php_version }}-intl"
         state: present
-      tags:
-        - deploy
 
     - name: Start and enable PHP-FPM
       service:
         name: "php{{ php_version }}-fpm"
         state: started
         enabled: yes
-      tags:
-        - deploy
-    - name: Debug - Print PHP-FPM service status
-      debug:
-        var: php_fpm_status
-    
-    - name: Debug - Check PHP-FPM socket existence
-      command: ls /var/run/php/php{{ php_version }}-fpm.sock
-      register: php_fpm_socket_check
-      ignore_errors: yes # Don't stop the playbook if the file doesn't exist
 
-    - name: Debug - Print PHP-FPM socket check result
-      debug:
-        var: php_fpm_socket_check
-        
     - name: Install Composer
       shell: |
         curl -sS https://getcomposer.org/installer | php
@@ -104,8 +80,6 @@
         chmod +x /usr/local/bin/composer
       args:
         creates: /usr/local/bin/composer
-      tags:
-        - deploy
 
     - name: Create web root directory
       file:
@@ -114,8 +88,6 @@
         owner: "{{ webserver_user }}"
         group: "{{ webserver_group }}"
         mode: '0755'
-      tags:
-        - deploy
 
     # First clone to a temporary location
     - name: Clone full repository to temporary directory
@@ -124,8 +96,6 @@
         dest: "{{ temp_repo_dir }}"
         version: "{{ git_branch }}"
         force: yes
-      tags:
-        - deploy
 
     # Copy only the subdirectory to the app root
     - name: Copy subdirectory to application root
@@ -136,16 +106,12 @@
         owner: "{{ webserver_user }}"
         group: "{{ webserver_group }}"
         mode: preserve
-      tags:
-        - deploy
 
     # Clean up temporary directory
     - name: Remove temporary repository
       file:
         path: "{{ temp_repo_dir }}"
         state: absent
-      tags:
-        - deploy
 
     - name: Set proper permissions for storage and bootstrap directories
       file:
@@ -158,8 +124,6 @@
       with_items:
         - "{{ app_root }}/storage"
         - "{{ app_root }}/bootstrap/cache"
-      tags:
-        - deploy
 
     - name: Install Composer dependencies
       composer:
@@ -167,8 +131,6 @@
         working_dir: "{{ app_root }}"
         no_dev: yes
       become_user: "{{ webserver_user }}"
-      tags:
-        - deploy
 
     - name: Create .env file from .env.example
       copy:
@@ -178,8 +140,6 @@
         owner: "{{ webserver_user }}"
         group: "{{ webserver_group }}"
         mode: '0644'
-      tags:
-        - deploy
 
     - name: Configure .env file with database settings
       lineinfile:
@@ -197,8 +157,6 @@
         - { regexp: '^DB_DATABASE=.*', line: 'DB_DATABASE={{ db_name }}' }
         - { regexp: '^DB_USERNAME=.*', line: 'DB_USERNAME={{ db_user }}' }
         - { regexp: '^DB_PASSWORD=.*', line: 'DB_PASSWORD={{ db_password }}' }
-      tags:
-        - deploy
 
     - name: Generate Laravel application key
       shell: |
@@ -207,9 +165,6 @@
         chdir: "{{ app_root }}"
       when: app_key == ""
       become_user: "{{ webserver_user }}"
-      tags:
-        - deploy
-        - app-key
 
     - name: Set custom application key if provided
       lineinfile:
@@ -217,29 +172,13 @@
         regexp: '^APP_KEY=.*'
         line: 'APP_KEY={{ app_key }}'
       when: app_key != ""
-      tags:
-        - deploy
-        - app-key
 
-    # - name: Run Laravel migrations
-    #   shell: |
-    #     php artisan migrate --force
-    #   args:
-    #     chdir: "{{ app_root }}"
-    #   become_user: "{{ webserver_user }}"
-    #   tags:
-    #     - deploy
-    #     - migrate
-    
-    - name: Optimize Laravel application
+    - name: Run Laravel migrations
       shell: |
-        php artisan optimize
+        php artisan migrate --force
       args:
         chdir: "{{ app_root }}"
       become_user: "{{ webserver_user }}"
-      tags:
-        - deploy
-        - optimize
 
     - name: Create Nginx server block
       template:
@@ -248,31 +187,23 @@
         owner: root
         group: root
         mode: '0644'
-      tags:
-        - deploy
 
     - name: Enable Nginx server block
       file:
         src: /etc/nginx/sites-available/{{ app_name }}
         dest: /etc/nginx/sites-enabled/{{ app_name }}
         state: link
-      tags:
-        - deploy
 
     - name: Remove default Nginx site
       file:
         path: /etc/nginx/sites-enabled/default
         state: absent
-      tags:
-        - deploy
 
     - name: Restart Nginx
       service:
         name: nginx
         state: restarted
         enabled: yes
-      tags:
-        - deploy
 
     - name: Set up cron job for Laravel scheduled tasks
       cron:
@@ -280,8 +211,6 @@
         minute: "*"
         user: "{{ webserver_user }}"
         job: "cd {{ app_root }} && php artisan schedule:run >> /dev/null 2>&1"
-      tags:
-        - deploy
 
     - name: Configure Laravel queue worker (optional)
       template:
@@ -290,8 +219,6 @@
         owner: root
         group: root
         mode: '0644'
-      tags:
-        - deploy
 
     - name: Start and enable Laravel queue worker
       systemd:
@@ -299,11 +226,7 @@
         state: started
         enabled: yes
         daemon_reload: yes
-      tags:
-        - deploy
 
     - name: Final output
       debug:
         msg: "Laravel application deployed successfully on {{ app_url }}"
-      tags:
-        - deploy
