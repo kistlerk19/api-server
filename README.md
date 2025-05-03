@@ -2,6 +2,8 @@
 
 This repository contains the code for an API providing reports and analysis from an AWS RDS MySQL database, along with Ansible playbooks for deploying the application to an EC2 instance.
 
+# The Screenshots directory contains all the database tasks and queries
+
 # PART ONE
 # API Documentation
 
