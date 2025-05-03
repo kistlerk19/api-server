@@ -147,7 +147,6 @@ Returns customers who have placed more than one order.
           "order_count": 2,
           "total_spent": "1371.00"
         }
-        // more customers...
       ],
       "message": "Frequent buyers retrieved successfully."
     }
