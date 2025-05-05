@@ -120,4 +120,4 @@ If you encounter issues:
 
 ---
 
-*This project was created as part of a Linux system administration automation challenge by Amalitech GTP.*
+*This project was created as part of a SysOps automation challenge by Amalitech GTP.*
