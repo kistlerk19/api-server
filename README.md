@@ -6,8 +6,8 @@ This repository contains the code for an API providing reports and analysis from
 
 # PART ONE
 # API Documentation
-
 This API provides access to reports and analysis for data stored in an AWS RDS MySQL database.
+
 
 ## Base URL
 
@@ -307,3 +307,11 @@ If you encounter issues:
    ```bash
    mysql -h your-rds-endpoint.rds.amazonaws.com -u your_db_user -p
    ```
+
+## 👥 Authors
+
+- **Ishmael Gyamfi**
+
+---
+
+*This project was created as part of a Linux system administration automation challenge by Amalitech GTP.*

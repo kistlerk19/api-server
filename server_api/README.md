@@ -193,3 +193,11 @@ DB_DATABASE=testdb
 DB_USERNAME=root
 DB_PASSWORD=Password123!
 ```
+
+## 👥 Authors
+
+- **Ishmael Gyamfi**
+
+---
+
+*This project was created as part of a Linux system administration automation challenge by Amalitech GTP.*

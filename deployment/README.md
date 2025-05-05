@@ -114,3 +114,10 @@ If you encounter issues:
    ```bash
    mysql -h your-rds-endpoint.rds.amazonaws.com -u your_db_user -p
    ```
+## 👥 Authors
+
+- **Ishmael Gyamfi**
+
+---
+
+*This project was created as part of a Linux system administration automation challenge by Amalitech GTP.*
