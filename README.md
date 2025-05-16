@@ -12,7 +12,7 @@ This API provides access to reports and analysis for data stored in an AWS RDS M
 ## Base URL
 
 ```
-http://domain.com/api
+http://public-api-address-or-domain/api
 ```
 
 ## Authentication
@@ -228,8 +228,8 @@ This deployment uses Ansible Vault to securely store sensitive information:
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/your-deployment-repo.git
-cd your-deployment-repo
+git clone https://github.com/kistlerk19/api-server.git
+cd api-server
 ```
 
 ### 2. Create Vault File

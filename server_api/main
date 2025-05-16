@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+
+SOURCE_DIRS=("/home/youruser/documents" "/home/youruser/projects")
+BACKUP_DIR="/backup/location"
+REMOTE_BACKUP_DIR="user@remote-server:/remote/backup/location"
+DATE=$(date +%F_%H-%M-%S)
+ARCHIVE_NAME="backup_$DATE.tar.gz"
+LOG_FILE="/var/log/backup.log"
+
+
+mkdir -p "$BACKUP_DIR"
+
+echo "[$(date)] Starting tar backup..." | tee -a "$LOG_FILE"
+tar -czf "$BACKUP_DIR/$ARCHIVE_NAME" "${SOURCE_DIRS[@]}" 2>>"$LOG_FILE"
+
+echo "[$(date)] Syncing backup to remote server..." | tee -a "$LOG_FILE"
+rsync -avz "$BACKUP_DIR/$ARCHIVE_NAME" "$REMOTE_BACKUP_DIR" >>"$LOG_FILE" 2>&1
+
+echo "[$(date)] Cleaning up old backups..." | tee -a "$LOG_FILE"
+ls -tp "$BACKUP_DIR"/backup_*.tar.gz | grep -v '/$' | tail -n +8 | xargs -I {} rm -- {}
+
+echo "[$(date)] Backup completed." | tee -a "$LOG_FILE"
+
+
+echo "Updating system packages..."
+sudo apt update && sudo apt upgrade -y
+echo "System updated successfully!"
+
+
+#!/usr/bin/env bash
+THRESHOLD=80
+echo "Checking disk usage..."
+USAGE=$(df / | tail -1 | awk '{print $5}' | sed 's/%//')
+if [ "$USAGE" -gt "$THRESHOLD" ]; then
+  echo "Warning! Disk usage is above $THRESHOLD%. Current usage: $USAGE%"
+else
+  echo "Disk usage is fine. Current usage: $USAGE%"
+fi
+
+
+#!/usr/bin/env bash
+SOURCE="/path/to/source"
+DEST="/path/to/backup"
+DATE=$(date +%Y-%m-%d)
+echo "Backing up files from $SOURCE to $DEST/$DATE..."
+mkdir -p "$DEST/$DATE"
+cp -r "$SOURCE"/* "$DEST/$DATE"
+echo "Backup completed!"
+
+#!/usr/bin/env bash
+echo "Installing Nginx..."
+sudo apt update
+sudo apt install -y nginx
+echo "Starting Nginx service..."
+sudo systemctl start nginx
+sudo systemctl enable nginx
+echo "Nginx web server is ready!"
+
+#!/usr/bin/env bash
+USERNAME="newuser"
+PASSWORD="password123"
+GROUP="sudo"
+echo "Creating user $USERNAME..."
+sudo useradd -m -s /bin/bash "$USERNAME"
+echo "$USERNAME:$PASSWORD" | sudo chpasswd
+echo "Adding $USERNAME to $GROUP group..."
+sudo usermod -aG "$GROUP" "$USERNAME"
+echo "User $USERNAME created with admin privileges!"
+
+
+#!/usr/bin/env bash
+JOB="0 2 * * * /path/to/script.sh"
+CRON_FILE="/tmp/mycron"
+echo "Adding cron job..."
+(crontab -l 2>/dev/null; echo "$JOB") | crontab -
+echo "Cron job added successfully!"
